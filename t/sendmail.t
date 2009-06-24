@@ -1,4 +1,4 @@
-use Test::More tests => 11;
+use Test::More tests => 12;
 use strict;
 $^W = 1;
 
@@ -14,7 +14,12 @@ Subject: This should never show up in my inbox
 blah blah blah
 EOF
 
+SKIP:
 {
+  skip 'Can run unless sendmail is at /usr/sbin/sendmail or /usr/lib/sendmail', 3
+    if -x '/usr/sbin/sendmail'
+      || -x '/usr/lib/sendmail';
+
   local $ENV{PATH} = '';
   ok( Email::Send::Sendmail->is_available, 'Email::Send always is available' );
   my $msg = Email::Send::Sendmail->is_available;
@@ -22,6 +27,22 @@ EOF
 
   my $path = Email::Send::Sendmail->_find_sendmail;
   ok( ! defined $path, 'no sendmail found because we have no path' );
+}
+
+SKIP:
+{
+  skip 'Cannot run unless sendmail is at /usr/sbin/sendmail or /usr/lib/sendmail', 1
+    unless -x '/usr/sbin/sendmail'
+      || -x '/usr/lib/sendmail';
+
+  local $ENV{PATH} = '';
+  $ENV{PATH} =~ tr/:/;/ if $^O =~ /Win/;
+  my $path = Email::Send::Sendmail->_find_sendmail;
+  if (-x '/usr/sbin/sendmail') {
+      is( $path, '/usr/sbin/sendmail', 'found sendmail in /usr/sbin' );
+  } else {
+      is( $path, '/usr/lib/sendmail', 'found sendmail in /usr/lib' );
+  }
 }
 
 {
